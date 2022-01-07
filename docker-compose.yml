@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:  
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shopify_server
+    env_file: 
+      - .env
+    ports:
+    - 8000:8081
+    volumes:
+      - .:/app
+    working_dir: /app
