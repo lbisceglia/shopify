@@ -4,13 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/rs/xid"
 )
 
 const (
-	ID_LEN = 20 // tied to xid specification
+	SKU_MIN_LEN = 4
+	SKU_MAX_LEN = 12
+	ID_LEN      = 20 // tied to xid specification
 )
 
 // An ID is a globally-unique identifier for an Item.
@@ -76,7 +80,10 @@ func (item *Item) ValidateSKU() (int, error) {
 // Names are properly formatted if they contain at least 1 non-whitespace character.
 // Returns a 400 Bad Request if the SKU is invalid.
 func (item *Item) ValidateName() (int, error) {
-	// TODO
+	item.Name = strings.TrimSpace(item.Name)
+	if len(item.Name) == 0 {
+		return http.StatusBadRequest, errors.New("name cannot be whitespace or empty")
+	}
 	return 0, nil
 }
 
@@ -84,7 +91,7 @@ func (item *Item) ValidateName() (int, error) {
 // Descriptions are properly formatted if any leading or trailing whitespace is trimmed.
 // Returns nil as there are no restrictions on Descriptions.
 func (item *Item) ValidateDescription() (int, error) {
-	// TODO
+	item.Description = strings.TrimSpace(item.Description)
 	return 0, nil
 }
 
@@ -93,7 +100,9 @@ func (item *Item) ValidateDescription() (int, error) {
 // If PriceInCAD is present, it is properly formatted if it is non-negative.
 // Returns a 400 Bad Request if the PriceInCAD is invalid.
 func (item *Item) ValidatePrice() (int, error) {
-	// TODO
+	if price := item.PriceInCAD; price != nil && *price < 0 {
+		return http.StatusBadRequest, errors.New("price_CAD cannot be negative")
+	}
 	return 0, nil
 }
 
@@ -102,7 +111,12 @@ func (item *Item) ValidatePrice() (int, error) {
 // If Quantity is present, it is properly formatted if it is non-negative.
 // Returns a 400 Bad Request if the Quantity is invalid.
 func (item *Item) ValidateQuantity() (int, error) {
-	// TODO
+	if qty := item.Quantity; qty != nil && *qty < 0 {
+		return http.StatusBadRequest, errors.New("quantity cannot be negative")
+	} else if qty == nil {
+		q := 0
+		item.Quantity = &q
+	}
 	return 0, nil
 }
 
@@ -125,7 +139,14 @@ func (id ID) isValid() (int, error) {
 // SKUs are properly formatted if they are between 4 and 12 characters long and contain only alphanumeric characters, hyphens, or underscores.
 // Returns a 400 Bad Request if the SKU is invalid.
 func (sku SKU) isValid() (int, error) {
-	// TODO
+	if len := len(sku); len < SKU_MIN_LEN || len > SKU_MAX_LEN {
+		return http.StatusBadRequest, fmt.Errorf("SKU must be between %d and %d characters in length", SKU_MIN_LEN, SKU_MAX_LEN)
+	}
+	for _, c := range sku {
+		if !(unicode.IsLetter(c) || unicode.IsDigit(c) || c == '-' || c == '_') {
+			return http.StatusBadRequest, fmt.Errorf("SKU may only contain [a-z A-Z 0-9 _ -]")
+		}
+	}
 	return 0, nil
 }
 
@@ -135,7 +156,17 @@ func (sku SKU) isValid() (int, error) {
 // empty string, nil, 0, respectively.
 // Returns a 400 Bad Request for invalid Items.
 func (item *Item) ValidateItem() (int, error) {
-	// TODO
+	if code, err := item.ValidateSKU(); err != nil {
+		return code, err
+	} else if code, err = item.ValidateName(); err != nil {
+		return code, err
+	} else if code, err = item.ValidateDescription(); err != nil {
+		return code, err
+	} else if code, err = item.ValidatePrice(); err != nil {
+		return code, err
+	} else if code, err = item.ValidateQuantity(); err != nil {
+		return code, err
+	}
 	return 0, nil
 }
 
