@@ -17,6 +17,7 @@ You can use frameworks, libraries and external dependencies to help you get to t
 3. In a terminal, navigate to the root folder of the repo and then run: `docker-compose up -d --build`
 4. Open your web browser and go to `localhost:8000/api/items` to see the app
 5. Explore!
+6. Run `docker-compose down` to kill the app and remove the containers.
 
 Please refer to the server's [API documentation](./server/API.md) if you wish to interact with the app using Postman or see more implementation details.
 
