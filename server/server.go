@@ -2,6 +2,8 @@ package server
 
 import (
 	"net/http"
+
+	"github.com/lbisceglia/shopify/db"
 )
 
 // An InventoryServer responds to HTTP requests on the inventory.
@@ -20,11 +22,20 @@ type InventoryServer interface {
 }
 
 // A Server is an implementation of an Inventory Server.
-type Server struct{}
+type Server struct {
+	db db.DB
+}
 
 // NewServer creates a new instance of an Inventory Server.
 func NewServer() InventoryServer {
 	return &Server{}
+}
+
+// newServer creates a new instance of an Inventory server with the specified database.
+func newServer(db db.DB) InventoryServer {
+	return &Server{
+		db: db,
+	}
 }
 
 // CreateItem creates an inventory Item according to the request.
