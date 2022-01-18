@@ -9,20 +9,22 @@ import (
 )
 
 const (
-	GET    = "GET"
-	PUT    = "PUT"
-	POST   = "POST"
-	DELETE = "DELETE"
+	GET    = http.MethodGet
+	PUT    = http.MethodPut
+	POST   = http.MethodPost
+	DELETE = http.MethodDelete
 )
 
 func main() {
-	r := mux.NewRouter()
+	r := mux.NewRouter().StrictSlash(true)
+	s := server.NewServer()
 
 	// Routes and Handlers
-	r.HandleFunc("/api/items", server.CreateItem).Methods(POST)
-	r.HandleFunc("/api/items/{id}", server.UpdateItem).Methods(PUT)
-	r.HandleFunc("/api/items/{id}", server.DeleteItem).Methods(DELETE)
-	r.HandleFunc("/api/items", server.GetItems).Methods(GET)
+	r.HandleFunc("/api/items", s.CreateItem).Methods(POST)
+	r.HandleFunc("/api/items/{id}", s.UpdateItem).Methods(PUT)
+	r.HandleFunc("/api/items/{id}", s.DeleteItem).Methods(DELETE)
+	r.HandleFunc("/api/items", s.GetItems).Methods(GET)
+	r.HandleFunc("/api/items/{id}", s.GetItem).Methods(GET)
 
 	// TODO: move port to environment var
 	log.Fatal(http.ListenAndServe(":8081", r))
