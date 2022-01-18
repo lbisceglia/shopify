@@ -1,7 +1,16 @@
 package models
 
 import (
+	"errors"
+	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/rs/xid"
+)
+
+const (
+	ID_LEN = 20 // tied to xid specification
 )
 
 // An ID is a globally-unique identifier for an Item.
@@ -12,8 +21,7 @@ type ID string
 
 // NewID creates a new, globally-unique ID.
 func NewID() ID {
-	// TODO
-	return ""
+	return ID(xid.New().String())
 }
 
 // A SKU is a unique identifier for an Item.
@@ -42,8 +50,14 @@ func (item *Item) GetID() ID {
 // SetID set an item's id field if it has not yet been set.
 // Returns an error if the id has already been set or the given id is invalid.
 func (item *Item) SetID(id ID) error {
-	// TODO
-	return nil
+	if !item.IdIsPresent() {
+		if _, err := id.isValid(); err != nil {
+			return err
+		}
+		item.ID = id
+		return nil
+	}
+	return errors.New("item id has already been set")
 }
 
 // ValidateID checks that the ID is present and formatted according to the API specifcations.
@@ -96,7 +110,14 @@ func (item *Item) ValidateQuantity() (int, error) {
 // IDs are properly formatted if they are 20 characters long and contain only lowercase letters a-v and numerical digits 0-9.
 // Returns a 400 Bad Request if the ID is invalid.
 func (id ID) isValid() (int, error) {
-	// TODO
+	if len(id) != ID_LEN {
+		return http.StatusBadRequest, fmt.Errorf("id must be %d characters in length", ID_LEN)
+	}
+	for _, c := range id {
+		if !(('a' <= c && c <= 'v') || ('0' <= c && c <= '9')) {
+			return http.StatusBadRequest, fmt.Errorf("id may only contain [a-v 0-9]")
+		}
+	}
 	return 0, nil
 }
 
@@ -120,6 +141,5 @@ func (item *Item) ValidateItem() (int, error) {
 
 // IdIsPresent returns true if the ID property is present in the Item, false otherwise.
 func (item *Item) IdIsPresent() bool {
-	// TODO
-	return false
+	return len(item.ID) == ID_LEN
 }
