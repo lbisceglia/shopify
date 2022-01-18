@@ -18,7 +18,7 @@ You can use frameworks, libraries and external dependencies to help you get to t
 4. Open your web browser and go to `localhost:8000/api/items` to see the app
 5. Explore!
 
-Please refer to the server's [API documentation](./server/API.md) if you wish to interact with the app using Postman.
+Please refer to the server's [API documentation](./server/API.md) if you wish to interact with the app using Postman or see more implementation details.
 
 ## Future Features
 - 'Export items as CSV' button
