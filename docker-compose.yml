@@ -1,15 +1,46 @@
 version: '3.8'
 
-services:  
+services:
+  db:
+    image: postgres:14.1-alpine3.15
+    container_name: shopify_database
+    ports:
+      - 5432:5432
+    environment: # FIXME: use a .env file in production
+      - POSTGRES_DB=inventory
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    networks:
+      - fullstack
+    volumes:
+      - ./db/sql/schema.postgresql.sql:/docker-entrypoint-initdb.d/1-schema.postgresql.sql
+      - database_postgres:/var/lib/postgresql/data
+  
   server:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: shopify_server
-    env_file: 
-      - .env
+    environment: # FIXME: use a .env file in production
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_DB=postgres
+      - DB_HOST=db
+      - DB_NAME=inventory
+      - DB_PORT=5432
     ports:
-    - 8000:8081
+      - 8000:8081
+    depends_on:
+      - db
+    networks:
+      - fullstack
     volumes:
       - .:/app
     working_dir: /app
+  
+volumes:
+  database_postgres:
+
+networks:
+  fullstack:
+    driver: bridge

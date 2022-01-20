@@ -32,15 +32,8 @@ type Server struct {
 	db db.DB
 }
 
-// NewServer creates a new instance of an Inventory Server.
-func NewServer() InventoryServer {
-	// TODO: change to real database
-	db := db.NewMockDB()
-	return newServer(db)
-}
-
-// newServer creates a new instance of an Inventory server with the specified database.
-func newServer(db db.DB) InventoryServer {
+// NewServer creates a new instance of an Inventory Server with the specified database.
+func NewServer(db db.DB) InventoryServer {
 	return &Server{
 		db: db,
 	}

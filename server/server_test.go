@@ -31,7 +31,7 @@ func Router(s InventoryServer) *mux.Router {
 }
 
 func Setup() *mux.Router {
-	s := newServer(db.NewMockDB())
+	s := NewServer(db.NewMockDB())
 	return Router(s)
 }
 
