@@ -99,20 +99,11 @@ func (db *SQLDB) initDB(user, password, host, port, dbname string) error {
 
 // InitDB connects the server to the database.
 func (db *SQLDB) InitDB() error {
-
-	// TODO: use os environment variables
-
 	user := os.Getenv("DB_USERNAME")
 	password := os.Getenv("DB_PASSWORD")
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	dbname := os.Getenv("DB_NAME")
-
-	// user := "postgres"
-	// password := "postgres"
-	// host := "localhost"
-	// port := "5432"
-	// dbname := "inventory"
 
 	return db.initDB(user, password, host, port, dbname)
 }

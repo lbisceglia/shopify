@@ -13,17 +13,17 @@ You can use frameworks, libraries and external dependencies to help you get to t
 
 ## Prequisites
 * Ensure that [Docker](https://docs.docker.com/get-docker/) is installed on your computer
-* Download an API platform such as [Postman](https://www.postman.com/) to allow you to send HTTP requests
+* Download an API platform such as [Postman](https://www.postman.com/) to allow you to send HTTP requests and interact with this app
 
 ## Running the App
 1. Clone the repo to your computer
-2. In a terminal, navigate to the root folder of the repo and then run `docker-compose up -d --build`
+2. In a terminal, navigate to the root folder of the repo and then run `docker-compose up -d`
 3. Open your web browser and go to `localhost:8000/api/items` to see the app
 4. Explore! Please refer to the server's [API documentation](./server/API.md) to understand how to interact with the app using Postman.
 
 ## Closing and Restarting the App
 * Run `docker-compose stop` to stop the app, `docker-compose start` to restart it.
-* Run `docker-compose down -v` to kill the app, wipe all database data and remove the containers.
+* Run `docker-compose down -v` to kill the app, wipe all database data, and remove the containers.
 
 ## Future Features
 - Soft deletion and un-deletion of items
