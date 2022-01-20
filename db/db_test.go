@@ -2,9 +2,7 @@ package db
 
 import (
 	"net/http"
-	"reflect"
 	"testing"
-	"time"
 
 	"github.com/lbisceglia/shopify/models"
 )
@@ -50,14 +48,16 @@ var itemA = models.Item{
 	Description: "First thing's first",
 	PriceInCAD:  price(20.00),
 	Quantity:    quantity(3),
-	DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-	LastUpdated: date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
 }
 
 func TestCreateItem(t *testing.T) {
 	tests := map[string]CreateResult{
 		"valid minimal": {
-			item:      &models.Item{SKU: "01234567", Name: "Thing1"},
+			item: &models.Item{
+				SKU:      "01234567",
+				Name:     "Thing1",
+				Quantity: quantity(0),
+			},
 			toLoad:    nil,
 			code:      http.StatusCreated,
 			isError:   false,
@@ -71,8 +71,6 @@ func TestCreateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(10.00),
 				Quantity:    quantity(200),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    nil,
 			code:      http.StatusCreated,
@@ -80,9 +78,17 @@ func TestCreateItem(t *testing.T) {
 			itemCount: 1,
 		},
 		"invalid duplicate sku": {
-			item: &models.Item{SKU: "01234567", Name: "Thing2"},
+			item: &models.Item{
+				SKU:      "01234567",
+				Name:     "Thing2",
+				Quantity: quantity(7),
+			},
 			toLoad: []models.Item{
-				{SKU: "01234567", Name: "Thing1"},
+				{
+					SKU:      "01234567",
+					Name:     "Thing1",
+					Quantity: quantity(0),
+				},
 			},
 			code:      http.StatusConflict,
 			isError:   true,
@@ -92,7 +98,11 @@ func TestCreateItem(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			db := initDB()
+			db, err := newTestDB()
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+			defer db.Close()
 			db.LoadTestItems(test.toLoad)
 
 			code, err := db.CreateItem(test.item)
@@ -107,11 +117,8 @@ func TestCreateItem(t *testing.T) {
 				if !test.item.IdIsPresent() {
 					t.Fatal("id was not set")
 				}
-				if got, want := *test.item.DateAdded, *db.CreationTime(); got != want {
-					t.Errorf("got %v; want %v", got, want)
-				}
-				if got, want := *test.item.LastUpdated, *db.CreationTime(); got != want {
-					t.Errorf("got %v; want %v", got, want)
+				if *test.item.LastUpdated != *test.item.DateAdded {
+					t.Error("LastUpdated time does not match DateAdded time")
 				}
 			}
 
@@ -119,6 +126,8 @@ func TestCreateItem(t *testing.T) {
 			if got, want := len(items), test.itemCount; got != want {
 				t.Errorf("got %v; want %v", got, want)
 			}
+			db.clearTestDB()
+			db.Close()
 		})
 	}
 }
@@ -141,8 +150,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -166,8 +173,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -181,7 +186,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(1912, time.June, 23, 00, 00, 00, 000, time.UTC)),
 			},
 			id: id("00000000000000000001"),
 			want: models.Item{
@@ -191,8 +195,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -206,7 +208,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				LastUpdated: date(time.Date(1954, time.June, 7, 00, 00, 00, 000, time.UTC)),
 			},
 			id: id("00000000000000000001"),
 			want: models.Item{
@@ -216,8 +217,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -240,8 +239,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 0, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -264,15 +261,14 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad: []models.Item{
 				itemA,
 				{
-					ID:   "00000000000000000002",
-					SKU:  "BBBBBBBB",
-					Name: "Thing2",
+					ID:       "00000000000000000002",
+					SKU:      "BBBBBBBB",
+					Name:     "Thing2",
+					Quantity: quantity(0),
 				},
 			},
 			code:      http.StatusConflict,
@@ -295,8 +291,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -319,8 +313,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "If you're not first you're last",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -342,8 +334,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -366,8 +356,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(1.00),
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -389,8 +377,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  nil,
 				Quantity:    quantity(3),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -413,8 +399,6 @@ func TestUpdateItem(t *testing.T) {
 				Description: "First thing's first",
 				PriceInCAD:  price(20.00),
 				Quantity:    quantity(9999),
-				DateAdded:   date(time.Date(2000, time.January, 01, 00, 00, 00, 000, time.UTC)),
-				LastUpdated: date(time.Date(2000, time.January, 02, 00, 00, 00, 000, time.UTC)),
 			},
 			toLoad:    []models.Item{itemA},
 			code:      http.StatusNoContent,
@@ -425,7 +409,11 @@ func TestUpdateItem(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			db := initDB()
+			db, err := newTestDB()
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+			defer db.Close()
 			db.LoadTestItems(test.toLoad)
 
 			code, err := db.UpdateItem(test.id, test.item)
@@ -442,7 +430,7 @@ func TestUpdateItem(t *testing.T) {
 				if err != nil {
 					t.Fatal("GetItem not working, cannot fetch an item which exists")
 				}
-				if got, want := *got, test.want; !reflect.DeepEqual(got, want) {
+				if got, want := got, test.want; !itemsEqual(got, want) {
 					t.Errorf("got %v; want %v", got, want)
 				}
 			}
@@ -451,6 +439,7 @@ func TestUpdateItem(t *testing.T) {
 			if got, want := len(items), test.itemCount; got != want {
 				t.Errorf("got %v; want %v", got, want)
 			}
+			db.clearTestDB()
 		})
 	}
 }
@@ -475,7 +464,11 @@ func TestDeleteItems(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			db := initDB()
+			db, err := newTestDB()
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+			defer db.Close()
 			db.LoadTestItems(test.toLoad)
 
 			code, err := db.DeleteItem(test.id)
@@ -487,10 +480,12 @@ func TestDeleteItems(t *testing.T) {
 				t.Errorf("got %v; want %v", code, test.code)
 			}
 
+			// TODO: re-enable after GetItems implemented
 			items, _, _ := db.GetItems()
 			if got, want := len(items), test.itemCount; got != want {
 				t.Errorf("got %v; want %v", got, want)
 			}
+			db.clearTestDB()
 		})
 	}
 }
@@ -515,7 +510,11 @@ func TestGetItem(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			db := initDB()
+			db, err := newTestDB()
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+			defer db.Close()
 			db.LoadTestItems(test.toLoad)
 
 			_, code, err := db.GetItem(test.id)
@@ -531,6 +530,7 @@ func TestGetItem(t *testing.T) {
 			if got, want := len(items), test.itemCount; got != want {
 				t.Errorf("got %v; want %v", got, want)
 			}
+			db.clearTestDB()
 		})
 	}
 }
@@ -553,7 +553,11 @@ func TestGetItems(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			db := initDB()
+			db, err := newTestDB()
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+			defer db.Close()
 			db.LoadTestItems(test.toLoad)
 
 			items, code, err := db.GetItems()
@@ -566,8 +570,29 @@ func TestGetItems(t *testing.T) {
 			if got, want := len(items), test.itemCount; got != want {
 				t.Errorf("got %v; want %v", got, want)
 			}
+			db.clearTestDB()
 		})
 	}
+}
+
+func itemsEqual(item1 models.Item, item2 models.Item) bool {
+	values := item1.ID == item2.ID &&
+		item1.SKU == item2.SKU &&
+		item1.Name == item2.Name &&
+		item1.Description == item2.Description
+
+	pointers := true
+	if item1.PriceInCAD == nil {
+		pointers = pointers && item2.PriceInCAD == nil
+	} else if item2.PriceInCAD == nil {
+		pointers = false
+	} else {
+		pointers = pointers && *item1.PriceInCAD == *item2.PriceInCAD
+	}
+
+	pointers = pointers && *item1.Quantity == *item2.Quantity
+
+	return values && pointers
 }
 
 func price(p float64) *float64 {
@@ -578,15 +603,6 @@ func quantity(q int) *int {
 	return &q
 }
 
-func date(d time.Time) *time.Time {
-	return &d
-}
-
 func id(id models.ID) *models.ID {
 	return &id
-}
-
-func initDB() DB {
-	// TODO: change to real database
-	return NewMockDB()
 }

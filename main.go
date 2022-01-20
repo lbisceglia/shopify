@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/lbisceglia/shopify/db"
 	"github.com/lbisceglia/shopify/server"
 )
 
@@ -16,8 +17,19 @@ const (
 )
 
 func main() {
+	// Initialize Router
 	r := mux.NewRouter().StrictSlash(true)
-	s := server.NewServer()
+
+	// Initialize Database
+	db, err := db.NewSQLDB()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	defer db.Close()
+
+	// Initialize Server
+	s := server.NewServer(db)
 
 	// Routes and Handlers
 	r.HandleFunc("/api/items", s.CreateItem).Methods(POST)

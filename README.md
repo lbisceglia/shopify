@@ -11,17 +11,20 @@ You can tackle this challenge using any technology you want. This is an open-end
 
 You can use frameworks, libraries and external dependencies to help you get to the parts you are interested in building, if this helps you; or start from scratch.
 
-## Running the App
-1. Ensure that [Docker](https://docs.docker.com/get-docker/) is installed on your computer
-2. Clone [the repo](https://github.com/lbisceglia/shopify) to your computer
-3. In a terminal, navigate to the root folder of the repo and then run: `docker-compose up -d --build`
-4. Open your web browser and go to `localhost:8000/api/items` to see the app
-5. Explore!
-6. Run `docker-compose down` to kill the app and remove the containers.
+## Prequisites
+* Ensure that [Docker](https://docs.docker.com/get-docker/) is installed on your computer
+* Download an API platform such as [Postman](https://www.postman.com/) to allow you to send HTTP requests
 
-Please refer to the server's [API documentation](./server/API.md) if you wish to interact with the app using Postman or see more implementation details.
+## Running the App
+1. Clone the repo to your computer
+2. In a terminal, navigate to the root folder of the repo and then run `docker-compose up -d --build`
+3. Open your web browser and go to `localhost:8000/api/items` to see the app
+4. Explore! Please refer to the server's [API documentation](./server/API.md) to understand how to interact with the app using Postman.
+
+## Closing and Restarting the App
+* Run `docker-compose stop` to stop the app, `docker-compose start` to restart it.
+* Run `docker-compose down -v` to kill the app, wipe all database data and remove the containers.
 
 ## Future Features
-- 'Export items as CSV' button
-- Image thumbnails for items
-
+- Soft deletion and un-deletion of items
+- Permanent item deletion after 30 days
